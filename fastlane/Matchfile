@@ -1,0 +1,4 @@
+git_url("git@github.com:aibashop/fastlane-match.git")
+git_branch("fastlane")
+git_private_key(ENV["SSH_PRIVATE_KEY"])
+shallow_clone(true)

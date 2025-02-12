@@ -1,0 +1,7 @@
+//swiftlint:disable all
+
+enum Config {
+
+   static let baseUrl = "{{ argument.API_BASE_URL }}"
+
+}
