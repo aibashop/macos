@@ -1,0 +1,42 @@
+name: Update Cache On Main Branch
+
+on:
+  push: 
+    branches: main
+
+jobs:
+  run-tests:
+    name: Run tests
+    runs-on: macos-latest
+    env:
+      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache/Restore SPM derived data
+        id: spm-cache
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+          lookup-only: true
+      
+      - name: Set up ruby environment
+        if: steps.spm-cache.outputs.cache-hit != 'true'
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Configure project
+        if: steps.spm-cache.outputs.cache-hit != 'true'
+        run: make distribution
+  
+      - name: Archive Only
+        if: steps.spm-cache.outputs.cache-hit != 'true'
+        run: |
+          ./Scripts/select-xcode.sh
+          bundle exec fastlane archive_app

@@ -1,0 +1,154 @@
+opt_out_usage
+skip_docs
+default_platform(:mac)
+
+stage_bundle_id = "com.aibashop.admin.stage"
+prod_bundle_id = "com.aibashop.admin"
+team_id = "ZKX4347K9W"
+keychain_name = "fastlane"
+keychain_password = ""
+
+debug_stage = "Debug-Stage"
+debug_prod = "Debug-Production"
+release_stage = "Release-Stage"
+release_prod = "Release-Production"
+
+lane :archive_app do
+  initial_setup
+  configure_distribution_code_signing
+  update_build_number(
+    project_path: "../AibaShopAdmin.xcodeproj",
+    target: "AibaShopAdmin",
+    bundle_id: stage_bundle_id
+  )
+  archive_for_testflight(
+    scheme: "Stage",
+    derived_data_path: File.expand_path("../.build")
+  )
+end
+
+lane :upload_app do
+  initial_setup
+  testflight
+end
+
+lane :configure_development_code_signing do
+  initial_setup
+  match(
+    type: "development",
+    platform: "macos",
+    force_for_new_devices: true,
+    app_identifier: [stage_bundle_id, prod_bundle_id],
+    keychain_name: keychain_name,
+    keychain_password: keychain_password,
+  )
+  profile_map = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
+  update_code_signing_settings(
+    build_configurations: [debug_stage, release_stage],
+    code_sign_identity: "iPhone Developer",
+    profile_name: profile_map[stage_bundle_id],
+    team_id: team_id,
+  )
+  update_code_signing_settings(
+    build_configurations: [debug_prod, release_prod],
+    code_sign_identity: "iPhone Developer",
+    profile_name: profile_map[prod_bundle_id],
+    team_id: team_id
+  )
+end
+
+lane :configure_distribution_code_signing do
+  initial_setup
+  match(
+    type: "appstore",
+    platform: "macos",
+    additional_cert_types: "mac_installer_distribution",
+    app_identifier: [stage_bundle_id, prod_bundle_id],
+    keychain_name: keychain_name,
+    keychain_password: keychain_password,
+  )
+  profile_map = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
+  update_code_signing_settings(
+    build_configurations: [release_stage],
+    profile_name: profile_map[stage_bundle_id],
+    code_sign_identity: "iPhone Distribution",
+    team_id: team_id
+  )
+  update_code_signing_settings(
+    build_configurations: [release_prod],
+    profile_name: profile_map[prod_bundle_id],
+    code_sign_identity: "iPhone Distribution",
+    team_id: team_id
+  )
+end
+
+private_lane :initial_setup do 
+  # Load env variables
+  require "dotenv"
+  Dotenv.load("../Private/Fastlane/.match.env")
+  ENV["SSH_PRIVATE_KEY"] = File.read("../Private/Fastlane/id_ecdsa_github").strip
+
+  # Load App Store Connect API token
+  app_store_connect_api_key(
+    key_id: ENV["APPSTORE_API_KEY_ID"],
+    issuer_id: ENV["APPSTORE_API_ISSUER_ID"],
+    key_filepath: "Private/Fastlane/AppStore-API-Key.p8"
+  )
+
+  # Create keychain
+  create_keychain(
+    name: keychain_name,
+    password: keychain_password,
+    unlock: true,
+    timeout: 0,
+  )
+end
+
+private_lane :configure_info_plist do |options|
+  plist_path = options[:info_plist_path]
+  updates = options[:config]
+  update_info_plist(
+    plist_path: plist_path,
+    block: proc do |plist|
+      updates.each do |key, value|
+        plist["#{key}"] = value
+      end
+    end
+  )
+end
+
+lane :update_build_number do |options|
+  current_version = sh("xcodebuild -project #{options[:project_path]} -target #{options[:target]} -showBuildSettings | grep -i 'MARKETING_VERSION' | sed 's/[ ]*MARKETING_VERSION = //'").lines.last.strip
+  puts "Current version: #{current_version}"
+  latest_build_number = latest_testflight_build_number(
+    version: current_version,
+    app_identifier: options[:bundle_id],
+    platform: "osx"
+  )
+  puts "Previous TestFlight Build Number: #{latest_build_number}"
+  increment_build_number(build_number: (latest_build_number + 1))
+end
+
+private_lane :archive_for_testflight do |options|
+  sh("xcodebuild -version")
+  ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "120"
+  gym(
+    scheme: options[:scheme],
+    export_method: "app-store",
+    export_options: {
+      testFlightInternalTestingOnly: true
+    },
+    skip_profile_detection: true,
+    derived_data_path: options[:derived_data_path]
+  )
+end
+
+private_lane :clean_up do |options|
+  # delete_keychain(
+  #   name: keychain_name
+  # ) if File.exist? File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+end
+
+lane :show_version do
+  puts "Not CI" unless ENV['CI']
+end

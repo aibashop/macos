@@ -1,0 +1,29 @@
+.DS_Store
+
+# Log Files
+/debug.log
+
+# Xcode
+xcuserdata/
+
+# Private Files
+Private.tar.gz
+/Private/
+/AibaShopAdmin/**/Config.swift
+
+## App packaging
+.local_derived_data/
+*.app
+*.pkg
+*.dSYM
+*.dSYM.zip
+*.mobileprovision
+build
+.build/
+
+## Fastlane
+fastlane/README.md
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
