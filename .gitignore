@@ -9,13 +9,14 @@ xcuserdata/
 # Private Files
 Private.tar.gz
 /Private/
-/AibaShop/**/Config.swift
+/AibaShopAdmin/**/Config.swift
 
 ## App packaging
 .local_derived_data/
-*.ipa
-*.dSYM.zip
+*.app
+*.pkg
 *.dSYM
+*.dSYM.zip
 *.mobileprovision
 build
 .build/

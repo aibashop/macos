@@ -1,0 +1,41 @@
+name: On Pull Request
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy_to_testflight:
+    name: Deploy To TestFlight
+    runs-on: macos-latest
+    env:
+      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Cache/Restore SPM derived data
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+      
+      - name: Configure Ruby Environment
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+        
+      - name: Configure Project For Distribution
+        run: make distribution
+          
+      - name: Archive and Upload
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          ./Scripts/select-xcode.sh
+          bundle exec fastlane archive_app
+          bundle exec fastlane upload_app

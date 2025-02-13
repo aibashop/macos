@@ -5,7 +5,6 @@ ENV_DIR=${PROJECT_DIR}/Private/Sourcery
 TEMPLATE_PATH=${PROJECT_DIR}/AibaShopAdmin/Configs/Config.stencil
 OUTPUT_FILE=${PROJECT_DIR}/AibaShopAdmin/Configs/Config.swift
 
-touch $OUTPUT_FILE
 file=""
 case "$CONFIGURATION" in
     *Stage*) file="${ENV_DIR}/.stage.private.env" ;;

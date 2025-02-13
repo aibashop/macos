@@ -1,15 +1,12 @@
 .SILENT:
 default: development
 
-setup:
-	@if [ -z "$(PASSPHRASE)" ]; then \
-		echo "No passphrase provided"; \
-		exit 1; \
-	fi
-	brew bundle && \
+setup = brew bundle && \
 	bundle install && \
-	chmod +x Scripts/*.sh && \
-	Scripts/decrypt.sh
+	ls Scripts/*.sh | xargs chmod +x && \
+	Scripts/decrypt.sh && \
+	touch AibaShopAdmin/Configs/Config.swift
+
 done = printf "\e[32m✓ %s\e[0m\n" "All Done ლ(╹◡╹ლ)"
 
 development:
