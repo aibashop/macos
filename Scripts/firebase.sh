@@ -9,4 +9,5 @@ case "$CONFIGURATION" in
     *) echo "Unknown project configuration: $CONFIGURATION"; exit 1 ;;
 esac
 [ -f $plist_file ] || { echo "Missing plist file at $plist_file" ; exit 1 ; }
-cp "${plist_file}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Resources/GoogleService-Info.plist"
+echo "$BUILT_PRODUCTS_DIR"
+cp "${plist_file}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/GoogleService-Info.plist"
