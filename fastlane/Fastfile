@@ -117,13 +117,15 @@ private_lane :configure_info_plist do |options|
   )
 end
 
-private_lane :update_build_number do |options|
+lane :update_build_number do |options|
   current_version = sh("xcodebuild -project #{options[:project_path]} -target #{options[:target]} -showBuildSettings | grep -i 'MARKETING_VERSION' | sed 's/[ ]*MARKETING_VERSION = //'").lines.last.strip
   puts "Current version: #{current_version}"
   latest_build_number = latest_testflight_build_number(
     version: current_version,
     app_identifier: options[:bundle_id],
+    platform: "osx"
   )
+  puts "Previous TestFlight Build Number: #{latest_build_number}"
   increment_build_number(build_number: (latest_build_number + 1))
 end
 
